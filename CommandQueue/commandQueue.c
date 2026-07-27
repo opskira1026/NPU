@@ -30,6 +30,9 @@ void enqueue(int i, const char* op)
 		g_pHeadCommand = newCommand;
 	else
 	{
+
+		// 현재 구현은 Tail을 매번 탐색하므로 enqueue가 O(N) 
+		// 실제 Runtime에서는 Tail 포인터를 함께 관리하여 O(1)로 구현한다.
 		COMMAND* pTailCommand = g_pHeadCommand;
 		while (pTailCommand->pNext != NULL)
 			pTailCommand = pTailCommand->pNext;
@@ -49,12 +52,19 @@ COMMAND* dequeueCommand(void)
 		pRemoveCommand = g_pHeadCommand;
 		g_pHeadCommand = pHeadCommand->pNext;
 	}
+	//지워질 대상이니 다음 노드를 가리킬 필요없음
+	pRemoveCommand->pNext = NULL;
 		 
 	return pRemoveCommand;
 }
 
 void destroyCommand(COMMAND* pRemove)
 {
+	// 조건 추가
+	// input이 NULL일때도 안전하게
+	if (pRemove == NULL)
+		return;
+	
 	free(pRemove);
 }
 
@@ -74,13 +84,15 @@ void releaseQueue(void)
 		free(pDelete);
 	}
 
-	if (pTmp == NULL)
-		printf("Queue Empty");
+	putchar('\n');
 }
 
 
 void executeCommand(COMMAND* pRemove)
 {
+	if (pRemove == NULL)
+		return;
+
 	printf("[NPU]\n");
 	printf("EXECUTE Command\n");
 	printf("ID : %d\n", pRemove->commandID);
@@ -101,6 +113,7 @@ void printCommand(void)
 	COMMAND* printCommand = g_pHeadCommand;
 	
 	printf("Current Queue\n");
+	printf("------------------------------------------------------\n");
 
 	while (printCommand != NULL)
 	{
@@ -110,7 +123,13 @@ void printCommand(void)
 		printCommand = printCommand->pNext;
 	}
 
+	printf("------------------------------------------------------\n");
 	putchar('\n');
+
+	// 반복문이 끝나면 pTmp는 항상 참
+	// g_pHeadCommand가 NULL일 경우에 빈 Queue를 출력
+	if (g_pHeadCommand == NULL)
+		printf("Queue Empty\n");
 }
 
 
@@ -120,15 +139,16 @@ int main(void)
 	fcreateCommand();
 	// command 출력
 	printCommand();
-	// head 제거
-	for (int i = 0; i < 4; i++)
+	COMMAND* cmd;
+
+	while((cmd = dequeueCommand()) != NULL)
 	{
-		COMMAND* removeHead = dequeueCommand();
+		// command 출력
 		printCommand();
 		// 제거될 헤드 출력
-		executeCommand(removeHead);
+		executeCommand(cmd);
 		// 제거될 헤드 동적할당 해제
-		destroyCommand(removeHead);
+		destroyCommand(cmd);
 	}
 	// 모든 노드 동적할당 해제
 	releaseQueue();
