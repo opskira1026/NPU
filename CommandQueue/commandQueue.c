@@ -145,6 +145,7 @@ void fcreateCommand(void)
 	enqueue(4, "SOFTMAX");
 }
 
+// By user UI 
 const char* getStateString(COMMAND_STATE state)
 {
 	switch (state)
