@@ -2,10 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef enum COMMAND_STATE
+{
+	CMD_WAIT,
+	CMD_RUNNING,
+	CMD_DONE,
+	CMD_ERROR
+
+} COMMAND_STATE;
+
 typedef struct COMMAND
 {
 	int commandID;
 	char operation[32];
+	COMMAND_STATE state;
+
 	struct COMMAND* pNext;
 
 } COMMAND;
@@ -38,6 +49,7 @@ void enqueue(int i, const char* op)
 
 	newCommand->commandID = i;
 	strcpy_s(newCommand->operation, sizeof(newCommand->operation), op);
+	newCommand->state = CMD_WAIT;
 	newCommand->pNext = NULL;
 
 	//if (g_pHeadCommand == NULL)
@@ -133,6 +145,23 @@ void fcreateCommand(void)
 	enqueue(4, "SOFTMAX");
 }
 
+const char* getStateString(COMMAND_STATE state)
+{
+	switch (state)
+	{
+	case CMD_WAIT:
+		return "Wait";
+	case CMD_RUNNING:
+		return "Running";
+	case CMD_DONE:
+		return "Done";
+	case CMD_ERROR:
+		return "Error";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 void printCommand(void)
 {
 	COMMAND* printCommand = g_DummyHead.pNext;
@@ -142,8 +171,9 @@ void printCommand(void)
 
 	while (printCommand != NULL)
 	{
-		printf("create : [%p] %d %s [%p]\n",
-			printCommand, printCommand->commandID, printCommand->operation, printCommand->pNext);
+
+		printf("create : [%p] %d %s [%p] %s\n",
+			printCommand, printCommand->commandID, printCommand->operation, printCommand->pNext, getStateString(printCommand->state));
 
 		printCommand = printCommand->pNext;
 	}
