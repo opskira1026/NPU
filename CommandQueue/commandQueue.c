@@ -21,6 +21,20 @@ typedef struct COMMAND
 
 } COMMAND;
 
+
+COMMAND* dequeueCommand(void);
+
+void schedulerRun(void);
+void enqueue(int i, const char* op);
+void getCommandStatus(COMMAND* cmd, COMMAND_STATE newState);
+void destroyCommand(COMMAND* pRemove);
+void releaseQueue(void);
+void executeCommand(COMMAND* pRemove);
+void fcreateCommand(void);
+void printCommand(void);
+
+const char* getStateString(COMMAND_STATE state);
+
 // 해당 방식으로 싱글 링크드리스트를 사용하면, 조건이 많아지는 문제가 있음.
 // 따라서 더미 헤드를 사용하여 조건을 줄이는 방향으로 로직을 구성.
 
@@ -92,6 +106,41 @@ COMMAND* dequeueCommand(void)
 	pRemoveCommand->pNext = NULL;
 		 
 	return pRemoveCommand;
+}
+
+void schedulerRun(void)
+{
+	COMMAND* cmd;
+	printf("----------------------------\n");
+	printf("NPU Scheduler Start\n");
+	printf("----------------------------\n");
+
+	while ((cmd = dequeueCommand()) != NULL)
+	{
+		// 헤드가 제거되는 과정을 출력
+		printCommand();
+		//status 출력
+		getCommandStatus(cmd, CMD_RUNNING);
+		// 제거될 헤드 출력
+		executeCommand(cmd);
+		// 제거된다면 status Done
+		getCommandStatus(cmd, CMD_DONE);
+		// 제거될 헤드 동적할당 해제
+		destroyCommand(cmd);
+	}
+
+	printf("----------------------------\n");
+	printf("NPU Scheduler Finished\n");
+	printf("----------------------------\n");
+}
+
+void getCommandStatus(COMMAND* cmd, COMMAND_STATE newState)
+{
+	printf("-----NPU status-----\n");
+	printf("Command ID : %d\n", cmd->commandID);
+	printf("status : %s -> %s\n\n",
+		getStateString(cmd->state), getStateString(newState));
+	cmd->state = newState;
 }
 
 void destroyCommand(COMMAND* pRemove)
@@ -195,17 +244,8 @@ int main(void)
 	fcreateCommand();
 	// command 출력
 	printCommand();
-	COMMAND* cmd;
-
-	while((cmd = dequeueCommand()) != NULL)
-	{
-		// command 출력
-		printCommand();
-		// 제거될 헤드 출력
-		executeCommand(cmd);
-		// 제거될 헤드 동적할당 해제
-		destroyCommand(cmd);
-	}
+	// scheduler 동작
+	schedulerRun();
 	// 모든 노드 동적할당 해제
 	releaseQueue();
 
